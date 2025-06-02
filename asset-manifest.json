@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/Xpresso/static/css/main.6e506880.css",
+    "main.js": "/Xpresso/static/js/main.8384a8f3.js",
+    "static/js/453.cb372aef.chunk.js": "/Xpresso/static/js/453.cb372aef.chunk.js",
+    "index.html": "/Xpresso/index.html",
+    "main.6e506880.css.map": "/Xpresso/static/css/main.6e506880.css.map",
+    "main.8384a8f3.js.map": "/Xpresso/static/js/main.8384a8f3.js.map",
+    "453.cb372aef.chunk.js.map": "/Xpresso/static/js/453.cb372aef.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.6e506880.css",
+    "static/js/main.8384a8f3.js"
+  ]
+}
