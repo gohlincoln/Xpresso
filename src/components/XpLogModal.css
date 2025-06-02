@@ -1,0 +1,101 @@
+/* src/components/XpLogModal.css */
+
+/* Overlay background */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent black */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Ensure it's above other content */
+}
+
+/* Modal content box */
+.modal-content {
+    background-color: #1a1a1a; /* Dark background */
+    color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px; /* Max width for larger screens */
+    max-height: 80vh; /* Max height before scrolling */
+    overflow-y: auto; /* Add scroll if content overflows vertically */
+    position: relative; /* Needed for absolute positioning of close button */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    font-family: sans-serif; /* Use a more readable font for log */
+    border: 2px solid #444;
+}
+
+/* Close button */
+.modal-close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #aaa;
+    transition: color 0.2s ease;
+}
+
+.modal-close-button:hover {
+    color: #fff;
+}
+
+/* Styling for the log list */
+.xp-log-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 15px;
+}
+
+.xp-log-list li {
+    background-color: #282828; /* Slightly lighter background for list items */
+    margin-bottom: 8px;
+    padding: 10px;
+    border-radius: 4px;
+    border-left: 4px solid #61dafb; /* Highlight color */
+    word-break: break-word; /* Prevent long lines from overflowing */
+    white-space: pre-wrap; /* Preserve line breaks if any in source */
+    font-size: 0.9em;
+}
+
+.xp-log-list li:last-child {
+    margin-bottom: 0;
+}
+
+.xp-log-list li .timestamp {
+    color: #bbb; /* Dim the timestamp */
+    margin-right: 5px;
+    font-size: 0.9em;
+}
+
+
+/* Styling for empty log message */
+.xp-log-empty {
+    font-size: 0.9em;
+    font-style: italic;
+    text-align: center;
+    color: #aaa;
+}
+
+/* Optional: Add subtle animation */
+.modal-content {
+    animation: fadeInScale 0.3s ease-out;
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}

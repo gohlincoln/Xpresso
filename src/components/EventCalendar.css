@@ -1,0 +1,110 @@
+/* src/EventCalendar.css */
+
+.calendar-wrapper {
+  max-width: 1000px;
+  margin: 2rem auto;
+  padding: 1rem;
+  background-color: #1e1e1e;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  color: white;
+}
+
+/* Full Calendar Styling */
+.rbc-calendar {
+  margin-top: 0 !important;
+  background-color: #1e1e1e !important;
+  color: white;
+  overflow: hidden; /* Prevent content overflow */
+}
+
+/* Toolbar */
+.rbc-toolbar {
+  background-color: #1e1e1e;
+  border-bottom: 1px solid #333;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  font-family: "Segoe UI", sans-serif;
+}
+
+.rbc-toolbar button {
+  background-color: #2a2a2a;
+  color: white;
+  border: 1px solid #444;
+  padding: 5px 10px;
+  border-radius: 6px;
+  margin: 0 4px;
+  transition: 0.2s;
+}
+
+.rbc-toolbar button:hover {
+  background-color: #3c3c3c;
+}
+
+/* Event Blocks */
+.rbc-event {
+  background-color: #3d5afe;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  border: none;
+}
+
+/* Highlight Today */
+.rbc-today {
+  background-color: #2b2b2b;
+}
+
+/* Days Outside of Current Month */
+.rbc-off-range-bg {
+  background-color: #181818;
+}
+
+/* Grid Border Colors */
+.rbc-month-view,
+.rbc-day-bg {
+  border-color: #333;
+}
+
+/* Header Row */
+.rbc-header {
+  background-color: #1e1e1e;
+  color: #bbb;
+  border-bottom: 1px solid #333;
+}
+
+/* Agenda View Styling */
+.rbc-agenda-view table,
+.rbc-agenda-view th,
+.rbc-agenda-view td {
+  background-color: #1e1e1e;
+  border-color: #333;
+  color: white;
+}
+
+/* Time View */
+.rbc-time-view {
+  overflow: hidden;
+}
+
+/* Layout Containers for Calendar View */
+.main-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  background-color: #000;
+  overflow-y: auto;
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+.calendar-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background-color: transparent !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
