@@ -471,3 +471,37 @@ textarea:focus {
   border-radius: 04px;
   text-shadow: 0 0 6px #00ff88;
 }
+.bot-dialogue-box,
+.miku-dialogue-box {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20, 20, 20, 0.95); /* deep dark background */
+  color: #f0f0f0; /* soft white text */
+  padding: 1rem 1.5rem;
+  font-family: "Press Start 2P", monospace;
+  border: 2px solid #333; /* muted border */
+  border-radius: 10px;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.4); /* soft subtle shadow */
+  z-index: 999;
+  max-width: 90%;
+  text-align: center;
+  backdrop-filter: blur(2px);
+}
+
+.gurt-dialogue-box {
+  position: absolute;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #222;
+  color: #0ff;
+  padding: 1rem;
+  font-family: "Press Start 2P", monospace;
+  border: 2px solid #0ff;
+  border-radius: 8px;
+  box-shadow: 0 0 6px rgba(0, 255, 255, 0.4);
+  z-index: 999;
+  text-align: center;
+}

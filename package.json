@@ -1,8 +1,9 @@
 {
-  "name": "comuna-clean",
+  
+  "name": "Xpresso",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://gohlincoln.github.io/xpresso",
+  "homepage": "https://gohlincoln.github.io/Xpresso",
   "dependencies": {
     "date-fns": "^4.1.0",
     "react": "^18.2.0",

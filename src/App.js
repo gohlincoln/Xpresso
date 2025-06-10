@@ -4,6 +4,8 @@ import EventCalendar from "./components/EventCalendar";
 import { getTodaysEvents } from "./components/getTodaysEvents";
 import XpLogModal from "./components/XpLogModal"; // Import the new modal component
 import TabbedJournal from "./components/TabbedJournal"; //Import the Notes App
+import Sidebar from './components/Sidebar'
+import ChatWidget from './components/ChatWidget';
 import "./App.css";
 // Make sure you have the 'Press Start 2P' font available or remove the reference if not.
 
@@ -15,6 +17,30 @@ const formatTime = (seconds) => {
 };
 
 const App = () => {
+  // predetermined route for the bot to follow
+  const route = [
+    { x: 900, y: 560 }, // top-right
+    { x: 500, y: 560 }, // top-left
+    { x: 500, y: 400 }, // bottom-left
+    { x: 900, y: 400 }, // bottom-right
+  ];
+  // track which waypoint we’re heading toward
+  const [routeIndex, setRouteIndex] = useState(0);
+  const [botPosition, setBotPosition] = useState({ x: 900, y: 560 }); // Add this line
+  const botPositionRef = useRef(botPosition);
+
+  const mikuSprite = new window.Image();
+  mikuSprite.src = process.env.PUBLIC_URL + "/mikusprite1.jpg";
+  const mikuPosition = { x: 900, y: 120 }; // wherever you want her to stand
+  const mikuSize = { w: 150, h: 150 }; // adjust to taste
+  const [mikuMessage, setMikuMessage] = useState("");
+  const [mikuDialogueStage, setMikuDialogueStage] = useState("idle");
+  const gurtBot = { w: 40, h: 40 }; // Adjust as needed
+  const gurtPosition = { x: 1400, y: 480 }; // Wherever you want him
+  
+  const [showGurtDialogue, setShowGurtDialogue] = useState(false);
+ 
+
   const canvasRef = useRef(null);
   const keysRef = useRef({});
   const [activeView, setActiveView] = useState("game");
@@ -37,7 +63,37 @@ const App = () => {
   useEffect(() => {
     localStorage.setItem("calendarCompleted", JSON.stringify(completedTasks));
   }, [completedTasks]);
+  //botmovement
+  useEffect(() => {
+    const moveBot = () => {
+      setBotPosition((prev) => {
+        const target = route[routeIndex];
+        const step = 5; // pixels per tick
+        let dx = target.x - prev.x;
+        let dy = target.y - prev.y;
 
+        // normalize movement so we don’t overshoot
+        const dist = Math.hypot(dx, dy) || 1;
+        const vx = (dx / dist) * step;
+        const vy = (dy / dist) * step;
+
+        const newX = Math.abs(dx) < step ? target.x : prev.x + vx;
+        const newY = Math.abs(dy) < step ? target.y : prev.y + vy;
+        const updated = { x: newX, y: newY };
+        botPositionRef.current = updated;
+
+        // once we reach the target, advance to the next waypoint
+        if (newX === target.x && newY === target.y) {
+          setRouteIndex((idx) => (idx + 1) % route.length);
+        }
+
+        return updated;
+      });
+    };
+
+    const interval = setInterval(moveBot, 200); // adjust speed here
+    return () => clearInterval(interval);
+  }, [routeIndex]); // re-run effect whenever we advance to a new waypoint
   // --- Save XP Log to localStorage ---
   useEffect(() => {
     localStorage.setItem("xpLog", JSON.stringify(xpLog));
@@ -49,10 +105,24 @@ const App = () => {
       isCompletedNow ? [...prev, title] : prev.filter((t) => t !== title)
     );
   };
+
+  const coachBot = {
+    w: 90,
+    h: 140,
+    sprite: new window.Image(),
+    getDialogue: (xp) => {
+      if (xp < 10) return "Welcome to the grind! Let’s get started. 💼";
+      if (xp < 30) return "You're picking up speed! Proud of you. 🚀";
+      if (xp < 60) return "You're unstoppable! Keep that streak alive. 🔥";
+      return "You're a legend now. Don't forget your fans. 😤👑";
+    },
+  };
+  coachBot.sprite.src = process.env.PUBLIC_URL + "/xpressocoach.png";
+
   const book = {
     img: new window.Image(),
-    xRatio: 0.85, // 75% of canvas width
-    yRatio: 0.44, // 55% of canvas height
+    xRatio: 0.235, // 75% of canvas widtha
+    yRatio: 0.55, // 55% of canvas height
     w: 80,
     h: 80,
     loaded: false,
@@ -63,23 +133,85 @@ const App = () => {
       return canvasRef.current?.height * this.yRatio;
     },
   };
+  const calendarHotspot = {
+    xRatio: 0.545, // tweak this for position
+    yRatio: 0.16, // tweak this for height
+    w: 64,
+    h: 64,
+    get x() {
+      return canvasRef.current?.width * this.xRatio;
+    },
+    get y() {
+      return canvasRef.current?.height * this.yRatio;
+    },
+  };
+
+  const GurtIndicator = {
+    img: new window.Image(),
+    xOffset: 0, // adjust later if needed
+    yOffset: -50,
+    w: 40,
+    h: 40,
+    loaded: false,
+  };
+
   const indicator = {
     img: new window.Image(),
-    xOffset: 17, // adjust later if needed
-    yOffset: -32,
-    w: 48,
-    h: 48,
+    xOffset: 22, // adjust later if needed
+    yOffset: -26,
+    w: 40,
+    h: 40,
     loaded: false,
+  };
+  const botIndicator = {
+    img: new window.Image(),
+    xOffset: 120,
+    yOffset: -40,
+    w: 40,
+    h: 40,
+    loaded: false,
+  };
+
+  botIndicator.img.src = process.env.PUBLIC_URL + "/lettere.jpg"; // reuse your E image
+  botIndicator.img.onload = () => {
+    botIndicator.loaded = true;
   };
 
   indicator.img.src = process.env.PUBLIC_URL + "/lettere.jpg";
   indicator.img.onload = () => {
     indicator.loaded = true;
   };
-
+  GurtIndicator.img.src = process.env.PUBLIC_URL + "/lettere.jpg";
+  GurtIndicator.img.onload = () => {
+    GurtIndicator.loaded = true;
+  };
   book.img.src = process.env.PUBLIC_URL + "/book.jpg";
   book.img.onload = () => {
     book.loaded = true;
+  };
+  const threatenWithIP = () => {
+    fetch("https://api.ipify.org?format=json")
+      .then((res) => res.json())
+      .then((data) => {
+        setMikuDialogueStage("ipThreat");
+        setMikuMessage(
+          `I’ve got your IP address now. ${data.ip}. Be checking up on you realll soon`
+        );
+        setTimeout(() => {
+          setMikuMessage("");
+          setMikuDialogueStage("idle");
+        }, 4000);
+      })
+      .catch(() => {
+        setMikuDialogueStage("ipThreat");
+        setMikuMessage(
+          "Couldn't get your IP... but I *will* find another way. 🔍"
+        );
+        setTimeout(() => {
+          setMikuMessage("");
+          setMikuDialogueStage("idle");
+        }, 4000);
+      });
   };
 
   const [volume, setVolume] = useState(0.5);
@@ -105,12 +237,18 @@ const App = () => {
     const id = setInterval(() => setSessionSeconds((s) => s + 1), 1000);
     return () => clearInterval(id);
   }, []);
+  const [botMessage, setBotMessage] = useState(""); // Message shown when bot talks
 
   const audioRefs = useRef({
     classic1: new Audio(process.env.PUBLIC_URL + "/classic1.mp3"),
     classic2: new Audio(process.env.PUBLIC_URL + "/classic2.mp3"),
     lofibeat: new Audio(process.env.PUBLIC_URL + "/lofibeat.mp3"),
   });
+  // these numbers are just examples—play with them until it sits nicely
+  const mikuIndicatorOffset = {
+    xOffset: 33, // move it closer/further on X
+    yOffset: -20, // move it up/down on Y
+  };
 
   // --- Unified Add XP Function ---
   const addXP = (amount, source) => {
@@ -306,8 +444,8 @@ const App = () => {
         img: new window.Image(),
         x: 100,
         y: 100,
-        w: 64,
-        h: 96,
+        w: 90,
+        h: 140,
         speed: 5,
         loaded: false,
       };
@@ -340,13 +478,85 @@ const App = () => {
           playerSprite.y + playerSprite.h > book.y
         );
       };
+      // alongside isNearBot() and isNearBook()
+      const isNearMiku = () => {
+        const { x: px, y: py, w: pw, h: ph } = playerSprite;
+        const mx = mikuPosition.x,
+          my = mikuPosition.y,
+          mw = mikuSize.w,
+          mh = mikuSize.h;
+        return px < mx + mw && px + pw > mx && py < my + mh && py + ph > my;
+      };
+      const isNearBot = () => {
+        const { x: bx, y: by } = botPositionRef.current;
+        const { x: px, y: py, w: pw, h: ph } = playerSprite;
+        const bw = coachBot.w;
+        const bh = coachBot.h;
+
+        const margin = 60; // try adjusting this value (distance buffer)
+
+        return (
+          px + pw > bx - margin &&
+          px < bx + bw + margin &&
+          py + ph > by - margin &&
+          py < by + bh + margin
+        );
+      };
+      const isNearGurt = () => {
+        const { x: px, y: py, w: pw, h: ph } = playerSprite;
+        const gx = gurtPosition.x;
+        const gy = gurtPosition.y;
+        const gw = gurtBot.w;
+        const gh = gurtBot.h;
+        const margin = 60;
+
+        return (
+          px + pw > gx - margin &&
+          px < gx + gw + margin &&
+          py + ph > gy - margin &&
+          py < gy + gh + margin
+        );
+      };
+
+      const isNearCalendar = () => {
+        return (
+          playerSprite.x < calendarHotspot.x + calendarHotspot.w &&
+          playerSprite.x + playerSprite.w > calendarHotspot.x &&
+          playerSprite.y < calendarHotspot.y + calendarHotspot.h &&
+          playerSprite.y + playerSprite.h > calendarHotspot.y
+        );
+      };
+      const mikuBot = {
+        w: mikuSize.w,
+        h: mikuSize.h,
+        sprite: mikuSprite,
+        getDialogue: () => "Blue Hair Blue Eyes, hiding in your wifi",
+      };
 
       const handleKeyDown = (e) => {
         const key = e.key.toLowerCase();
         keysRef.current[key] = true;
+        if (key === "e" && isNearBot()) {
+          setBotMessage(coachBot.getDialogue(xp));
+          setTimeout(() => setBotMessage(""), 4000); // hides after 4s
+        }
+        if (key === "e" && isNearMiku() && mikuDialogueStage === "idle") {
+          setMikuDialogueStage("start");
+          setMikuMessage(
+            ">Hi there! Im Miku! You seem busy... or at least, you *look* like you're working."
+          );
+        }
+        if (key === "e" && isNearGurt()) {
+          setShowGurtDialogue(true);
+          setTimeout(() => setShowGurtDialogue(false), 3000);
+        }
 
         if (key === "e" && isNearBook()) {
           setShowJournal(true);
+        }
+        if (key === "e" && isNearCalendar()) {
+          setActiveView("calendar");
+          addNotification("📅 Entered the calendar!");
         }
       };
       const handleKeyUp = (e) => {
@@ -396,10 +606,75 @@ const App = () => {
             bgSprite.w,
             bgSprite.h
           );
+          const { x: bx, y: by } = botPositionRef.current;
+
+          // Draw coachBot (static, at a DIFFERENT position)
+          if (coachBot.sprite.complete && coachBot.sprite.naturalWidth > 0) {
+            ctx.drawImage(
+              coachBot.sprite,
+              bx + 100,
+              by,
+              coachBot.w,
+              coachBot.h
+            ); // +100 to avoid overlap
+          }
+          if (mikuBot.sprite.complete) {
+            ctx.drawImage(
+              mikuBot.sprite,
+              mikuPosition.x,
+              mikuPosition.y,
+              mikuBot.w,
+              mikuBot.h
+            );
+          }
+          // draw the bobbing “!” over the bot when nearby
+          if (botIndicator.loaded && isNearBot()) {
+            const bopY = Math.sin(bopTimer) * 5;
+            ctx.drawImage(
+              botIndicator.img,
+              bx + botIndicator.xOffset,
+              by + botIndicator.yOffset + bopY,
+              botIndicator.w,
+              botIndicator.h
+            );
+          }
+
+          if (indicator.loaded && isNearMiku()) {
+            const bopY = Math.sin(bopTimer) * 5;
+            ctx.drawImage(
+              indicator.img,
+              mikuPosition.x + mikuIndicatorOffset.xOffset,
+              mikuPosition.y + mikuIndicatorOffset.yOffset + bopY,
+              indicator.w,
+              indicator.h
+            );
+          }
+          if (GurtIndicator.loaded && isNearGurt()) {
+            const bopY = Math.sin(bopTimer) * 5;
+            ctx.drawImage(
+              GurtIndicator.img,
+              gurtPosition.x + GurtIndicator.xOffset,
+              gurtPosition.y + GurtIndicator.yOffset + bopY,
+              GurtIndicator.w,
+              GurtIndicator.h
+            );
+          }
+          if (botIndicator.loaded && isNearCalendar()) {
+            const bopY = Math.sin(bopTimer) * 5;
+            ctx.drawImage(
+              botIndicator.img,
+              calendarHotspot.x,
+              calendarHotspot.y - 40 + bopY,
+              40,
+              40
+            );
+          }
+
           // Draw the book
           if (book.loaded && book.img.complete && book.img.naturalWidth > 0) {
             ctx.drawImage(book.img, book.x, book.y, book.w, book.h);
           }
+
           if (
             indicator.loaded &&
             isNearBook() // player must be nearby
@@ -502,99 +777,174 @@ const App = () => {
 
   return (
     <div className="App">
-      <div className="sidebar">
-        {/* Music Section */}
-        <h3>🎵 Jams</h3>
-        <button onClick={() => playAudio("classic1")}>Music Track 1</button>
-        <button onClick={() => playAudio("classic2")}>Music Track 2</button>
-        <button onClick={() => playAudio("lofibeat")}>1 Hour Track</button>
-        <button onClick={stopAudio}>Stop</button>
-        {/* Volume Control */}
-        <div className="volume-slider">
-          <label htmlFor="volume">🔊 Volume</label>
-          <input
-            id="volume"
-            type="range"
-            min="0"
-            max="1"
-            step="0.01"
-            value={volume}
-            onChange={(e) => setVolume(parseFloat(e.target.value))}
-          />
-        </div>
-
-        {/* Focus Stats */}
-        <div className="focus-stats">
-          <p>🕒 Total Time Studied: {formatTime(seconds)}</p>
-          <p>🧠 Current Session: {formatTime(sessionSeconds)}</p>
-          <p className="xp">🔥 Total XP: {xp}</p>
-          {/* Button to open the XP Log Modal */}
-          <button
-            onClick={() => setIsXpLogModalOpen(true)}
-            className="open-log-button"
-          >
-            View XP Log 📊
-          </button>
-        </div>
-        {/* Pomodoro Section */}
-        <div className="pomodoro">
-          <h3>🎯 Pomodoro</h3>
-          {isPomoRunning ? (
-            // Show timer and stop button when running
-            <>
-              <p className="pomodoro-status">
-                {isBreak ? "🌿 Break Time" : "💪 Focus Time"}
-              </p>
-              <p className="pomodoro-timer">{formatTime(pomoSeconds)}</p>
-              <button
-                onClick={() => {
-                  setIsPomoRunning(false);
-                  setIsBreak(false);
-                  setPomoSeconds(0);
-                  // Optionally add a penalty or just stop
-                  addNotification("Pomodoro timer stopped.");
-                }}
-                className="stop-pomodoro-button"
-              >
-                Stop Timer
-              </button>
-            </>
-          ) : (
-            // Show start button when not running
-            <button
-              onClick={() => {
-                setIsPomoRunning(true);
-                setIsBreak(false);
-                setPomoSeconds(1500); // 25 minutes focus time
-                addNotification("Pomodoro focus started!");
-              }}
-              className="start-pomodoro-button"
-            >
-              Start Focus (25 min)
-            </button>
-          )}
-          <p>🍝 Sessions Completed: {pomoCompleted}</p>
-          <p className="xp">🔥 Pomo XP: +{pomoXP}</p>
-        </div>
-        {/* View Toggles */}
-        <button onClick={() => setActiveView("calendar")}>
-          🗓️ Open Calendar
-        </button>
-        <button
-          onClick={() => setActiveView("game")}
-          style={{ marginTop: "0.5rem" }}
-          disabled={activeView === "game"} // Disable if already in game view
-        >
-          🎮 Back to Game
-        </button>
-        {/* Removed inline XP Log Display - it's now in the modal */}
-      </div>{" "}
-      {/* End Sidebar */}
+    <Sidebar
+  playAudio={playAudio}
+  stopAudio={stopAudio}
+  volume={volume}
+  setVolume={setVolume}
+  seconds={seconds}
+  sessionSeconds={sessionSeconds}
+  xp={xp}
+  formatTime={formatTime}
+  isPomoRunning={isPomoRunning}
+  isBreak={isBreak}
+  pomoSeconds={pomoSeconds}
+  setIsPomoRunning={setIsPomoRunning}
+  setIsBreak={setIsBreak}
+  setPomoSeconds={setPomoSeconds}
+  addNotification={addNotification}
+  pomoCompleted={pomoCompleted}
+  pomoXP={pomoXP}
+  setIsXpLogModalOpen={setIsXpLogModalOpen}
+  activeView={activeView}
+  setActiveView={setActiveView}
+/>
+  <ChatWidget />
       {/* Main Content Area */}
       <div className="main-content">
         {activeView === "game" ? (
           <>
             <canvas ref={canvasRef} id="gameCanvas"></canvas>
+            {botMessage && (
+              <div className="bot-dialogue-box">
+                <p>{botMessage}</p>
+              </div>
+            )}
+
+            {mikuDialogueStage === "start" && (
+              <div className="miku-dialogue-box">
+                <p>
+                  Hi there!Im hastune miku! You seem busy... or at least, you
+                  *look* like you're working.
+                </p>
+                <button
+                  onClick={() => {
+                    setMikuDialogueStage("option1");
+                    setMikuMessage(
+                      "Oh, you're working hard? Then why are you talking to me right now...? 🫢"
+                    );
+                    setTimeout(() => {
+                      setMikuMessage("");
+                      setMikuDialogueStage("idle");
+                    }, 6000);
+                  }}
+                >
+                  I'm working
+                </button>
+                <button
+                  onClick={() => {
+                    setMikuDialogueStage("option2");
+                    setMikuMessage(
+                      "You're procrastinating? That’s okay... I mean, it's not okay, but I’ll pretend I didn’t hear that."
+                    );
+                    setTimeout(() => {
+                      setMikuMessage("");
+                      setMikuDialogueStage("idle");
+                    }, 6000);
+                  }}
+                >
+                  I'm procrastinating
+                </button>
+                <button
+                  onClick={() => {
+                    setMikuDialogueStage("option3");
+                    setMikuMessage(
+                      "Ah... aimlessly clicking around again? That's a bold productivity strategy. 😶"
+                    );
+                    setTimeout(() => {
+                      setMikuDialogueStage("idle");
+                      setMikuMessage("");
+                    }, 6000); // adjust duration if needed
+                  }}
+                >
+                  I'm... just clicking things
+                </button>
+              </div>
+            )}
+
+            {mikuDialogueStage === "option1" && (
+              <div className="miku-dialogue-box">
+                <p>{mikuMessage}</p>
+                <button
+                  onClick={() => {
+                    setMikuMessage(
+                      "Okay! I’ll let you focus now. Good luck~ 💻🎶"
+                    );
+                    setTimeout(() => {
+                      setMikuDialogueStage("idle");
+                      setMikuMessage("");
+                    }, 3000);
+                  }}
+                >
+                  You're right... I'll get back to work 😔
+                </button>
+              </div>
+            )}
+
+            {mikuDialogueStage === "option2" && (
+              <div className="miku-dialogue-box">
+                <p>{mikuMessage}</p>
+                <button onClick={threatenWithIP}>...I'll try again 😭</button>
+              </div>
+            )}
+
+            {mikuDialogueStage === "option3" && (
+              <div className="miku-dialogue-box">
+                <p>{mikuMessage}</p>
+                <button
+                  onClick={() => {
+                    const sites = [
+                      "https://longdogechallenge.com",
+                      "https://pointerpointer.com",
+                      "https://cat-bounce.com",
+                      "https://youtu.be/n3ph6yyhr-Q?si=tloEpWptxjIAF_2W,",
+                      "https://youtu.be/z4MiJmjNlw0?si=U7QKXYgjI-Nze1ry",
+                      "https://youtu.be/bU7tAZ4TWcw?si=Dc98e1yX3l3_70Rd",
+                      "https://youtu.be/_-2dIuV34cs?si=UJXJGIOt3vZjSRf1",
+                    ];
+                    const chosen =
+                      sites[Math.floor(Math.random() * sites.length)];
+                    window.open(chosen, "_blank");
+                  }}
+                >
+                  Wait— what are you doi—
+                </button>
+              </div>
+            )}
+
+            {mikuDialogueStage === "ipThreat" && (
+              <div className="miku-dialogue-box">
+                <p>{mikuMessage}</p>
+              </div>
+            )}
+
+            {mikuDialogueStage === "ipThreat" && (
+              <div className="miku-dialogue-box">
+                <p>{mikuMessage}</p>
+                {/* no button here to make her threat land */}
+              </div>
+            )}
+            {/* Gurt Sprite */}
+            <img
+              src={process.env.PUBLIC_URL + "/gurt.png"} // Your yogurt sprite image
+              alt="Gurt"
+              style={{
+                position: "absolute",
+                left: `${gurtPosition.x}px`,
+                top: `${gurtPosition.y}px`,
+                width: `${gurtBot.w}px`,
+                height: `${gurtBot.h}px`,
+                zIndex: 5,
+              }}
+            />
+
+            {/* Gurt Dialogue */}
+            {showGurtDialogue && (
+              <div className="gurt-dialogue-box">
+                <p>gurt: yo.</p>
+              </div>
+            )}
+
             {/* Overlay for today's tasks - stays in the game view */}
             {todaysTasks.length > 0 && (
               <div className="todo-overlay">
